@@ -137,7 +137,6 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_ENV=development
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - WANDB_API_KEY=${WANDB_API_KEY}
       - WANDB_PROJECT=${WANDB_PROJECT:-mindsync-model}
@@ -150,8 +149,7 @@ services:
         condition: service_healthy
       cache:
         condition: service_healthy
-    volumes:
-      - artifacts_data:/app/artifacts
+
 
   # =========================
   # API Gateway (Kong)
@@ -163,7 +161,7 @@ services:
       - "8001:8001"
     environment:
       - KONG_DATABASE=off
-      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.local.yml
+      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
       - KONG_PROXY_ACCESS_LOG=/dev/stdout
       - KONG_ADMIN_ACCESS_LOG=/dev/stdout
       - KONG_PROXY_ERROR_LOG=/dev/stderr
@@ -171,6 +169,8 @@ services:
     depends_on:
       - inference
       - backend
+    volumes:
+      - ./mindsync-api-gateway/kong.local.yml:/usr/local/kong/declarative/kong.yml:ro
 
   # =========================
   # Frontend
@@ -179,6 +179,8 @@ services:
     image: ivanchristian005/mindsync-frontend:latest
     ports:
       - "3000:80"
+    environment:
+      - API_BASE_URL=http://api-gateway:8000
     depends_on:
       - api-gateway
 
@@ -187,4 +189,4 @@ volumes:
   postgres_flask_data:
   cache_data:
   keys:
-  artifacts_data:
+  # artifacts_data removed - using bind mount instead
