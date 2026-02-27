@@ -151,7 +151,7 @@ services:
       cache:
         condition: service_healthy
     volumes:
-      - ./mindsync-model-flask/artifacts:/app/artifacts
+      - artifacts_data:/app/artifacts
 
   # =========================
   # API Gateway (Kong)
@@ -163,13 +163,11 @@ services:
       - "8001:8001"
     environment:
       - KONG_DATABASE=off
-      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
+      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.local.yml
       - KONG_PROXY_ACCESS_LOG=/dev/stdout
       - KONG_ADMIN_ACCESS_LOG=/dev/stdout
       - KONG_PROXY_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_ERROR_LOG=/dev/stderr
-    volumes:
-      - ./mindsync-api-gateway/kong.local.yml:/usr/local/kong/declarative/kong.yml
     depends_on:
       - inference
       - backend
@@ -189,3 +187,4 @@ volumes:
   postgres_flask_data:
   cache_data:
   keys:
+  artifacts_data:
