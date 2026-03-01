@@ -53,7 +53,7 @@ services:
     volumes:
       - postgres_flask_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mindsync"]
+      test: ["CMD-SHELL", "pg_isready -U mindsync -d mindsync_model"]
       interval: 10s
       timeout: 5s
       retries: 5
