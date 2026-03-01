@@ -137,18 +137,27 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEYS=${GEMINI_API_KEYS}
       - WANDB_API_KEY=${WANDB_API_KEY}
       - WANDB_PROJECT=${WANDB_PROJECT:-mindsync-model}
       - WANDB_ENTITY=${WANDB_ENTITY}
       - ARTIFACT_VERSION=${ARTIFACT_VERSION:-latest}
       - DATABASE_URL=postgresql://mindsync:mindsync_dev_password@database-flask:5432/mindsync_model
       - VALKEY_URL=redis://cache:6379
+    volumes:
+      - keys:/keys:ro
+    entrypoint: >
+      sh -c '
+        export JWT_PUBLIC_KEY="$$(cat /keys/public.pem)" &&
+        exec gunicorn -c gunicorn_config.py wsgi:app
+      '
     depends_on:
       database-flask:
         condition: service_healthy
       cache:
         condition: service_healthy
+      keygen:
+        condition: service_completed_successfully
 
 
   # =========================
