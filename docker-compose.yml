@@ -3,27 +3,6 @@ version: "3.9"
 services:
 
   # =========================
-  # JWT Key Generation
-  # =========================
-  keygen:
-    image: alpine
-    volumes:
-      - keys:/keys
-    command: >
-      sh -c "
-        apk add --no-cache openssl &&
-        if [ ! -f /keys/private.pem ]; then
-          openssl genrsa -out /keys/private_rsa.pem 2048 &&
-          openssl pkcs8 -topk8 -inform PEM -in /keys/private_rsa.pem -out /keys/private.pem -nocrypt &&
-          openssl rsa -in /keys/private_rsa.pem -pubout -out /keys/public.pem &&
-          rm /keys/private_rsa.pem &&
-          echo 'JWT keys generated successfully';
-        else
-          echo 'JWT keys already exist, skipping generation';
-        fi
-      "
-
-  # =========================
   # Training Service
   # =========================
   training:
@@ -113,21 +92,13 @@ services:
       - SPRING_MAIL_USERNAME=${SMTP_USERNAME:-}
       - SPRING_MAIL_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
-    volumes:
-      - keys:/keys:ro
-    entrypoint: >
-      sh -c '
-        export JWT_PRIVATE_KEY="$(cat /keys/private.pem)" &&
-        export JWT_PUBLIC_KEY="$(cat /keys/public.pem)" &&
-        exec sh -c "java $$JAVA_OPTS -jar app.jar"
-      '
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
     depends_on:
       database:
         condition: service_healthy
       cache:
         condition: service_healthy
-      keygen:
-        condition: service_completed_successfully
 
   # =========================
   # Inference Service
@@ -144,20 +115,12 @@ services:
       - ARTIFACT_VERSION=${ARTIFACT_VERSION:-latest}
       - DATABASE_URL=postgresql://mindsync:mindsync_dev_password@database-flask:5432/mindsync_model
       - VALKEY_URL=redis://cache:6379
-    volumes:
-      - keys:/keys:ro
-    entrypoint: >
-      sh -c '
-        export JWT_PUBLIC_KEY="$$(cat /keys/public.pem)" &&
-        exec gunicorn -c gunicorn_config.py wsgi:app
-      '
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
     depends_on:
       database-flask:
         condition: service_healthy
       cache:
         condition: service_healthy
-      keygen:
-        condition: service_completed_successfully
 
 
   # =========================
@@ -197,5 +160,3 @@ volumes:
   postgres_data:
   postgres_flask_data:
   cache_data:
-  keys:
-  # artifacts_data removed - using bind mount instead
