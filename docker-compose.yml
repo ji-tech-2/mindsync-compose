@@ -14,8 +14,6 @@ services:
       - WANDB_PROJECT=${WANDB_PROJECT:-mindsync-model}
       - WANDB_ENTITY=${WANDB_ENTITY}
       - MODEL_VERSION=${MODEL_VERSION:-v1.0}
-    volumes:
-      - ./mindsync-model-training/artifacts:/app/artifacts
     profiles:
       - training
     command: python train.py
